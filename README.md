@@ -1,1 +1,3 @@
-# template
+# GOCI
+
+lightweight CI tool 
