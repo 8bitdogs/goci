@@ -26,20 +26,14 @@ func (s *Server) Handle(patter, method string, h http.Handler) {
 	s.server.Handle(patter, method, ruffe.HTTPHandlerFunc(h.ServeHTTP))
 }
 
-func (s *Server) ValidateSecret(secret string) {
-	s.server.Use(ruffe.HTTPHandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-	}))
+func (s *Server) Use(h ruffe.Handler) {
+	s.server.Use(h)
 }
 
 func (s *Server) ListenAndServe() error {
 	// logging
 	s.server.Use(ruffe.HTTPHandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Infof("request %s %s %s %v", r.Method, r.RequestURI, r.Proto, r.Header)
-	}))
-	// validate secret
-	s.server.Use(ruffe.HTTPHandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
 	}))
 	// add request id
 	s.server.Use(ruffe.HTTPHandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -1,4 +1,4 @@
-package git
+package github
 
 type webhookPayload struct {
 	Ref        string `json:"ref"`
