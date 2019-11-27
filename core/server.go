@@ -31,8 +31,8 @@ func NewServer(addr string) *Server {
 	return s
 }
 
-func (s *Server) Handle(patter, method string, h http.Handler) {
-	s.server.Handle(patter, method, ruffe.HTTPHandlerFunc(h.ServeHTTP))
+func (s *Server) Handle(patter, method string, h ruffe.Handler) {
+	s.server.Handle(patter, method, h)
 }
 
 func (s *Server) Use(h ruffe.Handler) {

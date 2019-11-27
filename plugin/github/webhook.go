@@ -12,9 +12,8 @@ import (
 )
 
 type Webhook struct {
-	Timeout   time.Duration
-	j         core.Job
-	requestID uint64
+	Timeout time.Duration
+	j       core.Job
 }
 
 func NewWebhook(j core.Job) *Webhook {

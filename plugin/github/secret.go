@@ -26,9 +26,3 @@ func (s *Secret) Validate(r *http.Request) bool {
 	hv := r.Header.Get(headerName)
 	return hv != "" && hmac.Equal([]byte(hv), s.mac)
 }
-
-func (s *Secret) Handle(w http.ResponseWriter, r *http.Request) {
-	if !s.Validate(r) {
-		w.WriteHeader(http.StatusForbidden)
-	}
-}
