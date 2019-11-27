@@ -3,12 +3,13 @@ FROM golang:1.13.4-alpine
 RUN apk add --no-cache git; \
     go get -u github.com/kardianos/govendor
 
-ENV WD=${GOPATH}/src/goci
+RUN PATH=$PATH:$GOPATH/bin
+
+ENV WD=${GOPATH}/src/github.com/8bitdogs/goci
 COPY ./ ${WD}
 
 WORKDIR ${WD}
 
-RUN PATH=$PATH:$GOPATH/bin
 
 # install dependecies
 RUN if [ ! -d "vendor" ]; then \
@@ -28,7 +29,7 @@ FROM docker:19.03-git
 RUN apk add --update make
 RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
 
-COPY --from=0 /go/src/goci/bin/goci /usr/local/bin/goci
+COPY --from=0 /go/src/github.com/8bitdogs/goci/bin/goci /usr/local/bin/goci
 COPY docker-entrypoint.sh /usr/local/bin/ 
 
 ENTRYPOINT [ "docker-entrypoint.sh" ]

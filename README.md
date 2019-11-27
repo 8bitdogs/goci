@@ -11,4 +11,3 @@ lightweight CI tool
 ## Quick start
 check target `up` in `makefile`     
 environment description will be done soon
-

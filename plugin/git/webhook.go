@@ -7,8 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"goci/core"
-
+	"github.com/8bitdogs/goci/core"
 	"github.com/8bitdogs/log"
 )
 

@@ -9,7 +9,7 @@ import (
 
 type config struct {
 	CIFile string `flag:"ci-config" json:"-" default:"ci.json"`
-	Secret string `env:"SECRET" required:"true"`
+	Secret string `env:"GIT_WEBHOOK_SECRET""`
 	Server struct {
 		Addr string `env:"SERVER_ADDR" default:":7878"`
 	}

@@ -5,8 +5,7 @@ import (
 	"os"
 	"os/exec"
 
-	"goci/core"
-
+	"github.com/8bitdogs/goci/core"
 	"github.com/8bitdogs/log"
 )
 

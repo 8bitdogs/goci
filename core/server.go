@@ -15,7 +15,7 @@ type Server struct {
 	server    *ruffe.Server
 }
 
-func NewServer(addr string, secret string) *Server {
+func NewServer(addr string) *Server {
 	return &Server{
 		addr:   addr,
 		server: ruffe.New(),
@@ -24,6 +24,12 @@ func NewServer(addr string, secret string) *Server {
 
 func (s *Server) Handle(patter, method string, h http.Handler) {
 	s.server.Handle(patter, method, ruffe.HTTPHandlerFunc(h.ServeHTTP))
+}
+
+func (s *Server) ValidateSecret(secret string) {
+	s.server.Use(ruffe.HTTPHandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+	}))
 }
 
 func (s *Server) ListenAndServe() error {
