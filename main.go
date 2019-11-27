@@ -28,6 +28,7 @@ func main() {
 		gs := github.NewSecret(cfg.Github.Secret, cfg.Github.Key)
 		server.Use(ruffe.HandlerFunc(func(ctx ruffe.Context) error {
 			if !gs.Validate(ctx.Request()) {
+				log.Debugf("request-%d has invalid signature", core.RequestID(ctx.Request().Context()))
 				return ctx.Result(http.StatusForbidden, nil)
 			}
 			return nil
