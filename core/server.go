@@ -16,10 +16,19 @@ type Server struct {
 }
 
 func NewServer(addr string) *Server {
-	return &Server{
+	s := &Server{
 		addr:   addr,
 		server: ruffe.New(),
 	}
+	// add request id
+	s.server.Use(ruffe.HTTPHandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		*r = *r.WithContext(storeRequestID(r.Context(), atomic.AddUint64(&s.requestID, 1)))
+	}))
+	// logging
+	s.server.Use(ruffe.HTTPHandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Infof("request-%d %s %s %s %v", RequestID(r.Context()), r.Method, r.RequestURI, r.Proto, r.Header)
+	}))
+	return s
 }
 
 func (s *Server) Handle(patter, method string, h http.Handler) {
@@ -31,13 +40,5 @@ func (s *Server) Use(h ruffe.Handler) {
 }
 
 func (s *Server) ListenAndServe() error {
-	// logging
-	s.server.Use(ruffe.HTTPHandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Infof("request %s %s %s %v", r.Method, r.RequestURI, r.Proto, r.Header)
-	}))
-	// add request id
-	s.server.Use(ruffe.HTTPHandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		*r = *r.WithContext(storeRequestID(r.Context(), atomic.AddUint64(&s.requestID, 1)))
-	}))
 	return http.ListenAndServe(s.addr, s.server)
 }

@@ -8,10 +8,11 @@ import (
 )
 
 type config struct {
-	CIFile string `flag:"ci-config" json:"-" default:"ci.json"`
-	Github struct {
+	CIFile   string `flag:"ci-config" default:"ci.json"`
+	LogLevel string `env:"LOG_LEVEL" default:"info"`
+	Github   struct {
 		Key    string `env:"GITHUB_WEBHOOK_KEY_NAME" default:"sha1"`
-		Secret string `env:"GITHUB_WEBHOOK_SECRET""`
+		Secret string `env:"GITHUB_WEBHOOK_SECRET"`
 	}
 	Server struct {
 		Addr string `env:"SERVER_ADDR" default:":7878"`
