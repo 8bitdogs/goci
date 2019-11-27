@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 
+	"github.com/8bitdogs/log"
 	"github.com/antonmashko/envconf"
 )
 
@@ -34,6 +35,11 @@ func parse() (*config, error) {
 	if err != nil {
 		return nil, err
 	}
+	lvl, err := log.ParseLevel(cfg.LogLevel)
+	if err != nil {
+		return nil, err
+	}
+	log.DefaultLogger = log.New("goci", lvl)
 	err = json.Unmarshal(b, &cfg.CI)
 	if err != nil {
 		return nil, err
