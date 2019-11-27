@@ -9,5 +9,6 @@ func storeRequestID(ctx context.Context, requestID uint64) context.Context {
 }
 
 func RequestID(ctx context.Context) uint64 {
-	return ctx.Value(ctxKey{}).(uint64)
+	rID, _ := ctx.Value(ctxKey{}).(uint64)
+	return rID
 }
