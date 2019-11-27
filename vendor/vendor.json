@@ -1,0 +1,25 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "+XWi+p3vglcYdDf6kjZPXvi8AeM=",
+			"path": "github.com/8bitdogs/log",
+			"revision": "e3fa6fe20e1760b76cc98bf85c452f2ee3cabb23",
+			"revisionTime": "2019-02-14T19:49:43Z"
+		},
+		{
+			"checksumSHA1": "w/GYjKCxxoBV1Xf0TACu1GxYuis=",
+			"path": "github.com/8bitdogs/ruffe",
+			"revision": "6896c0b61fadd6aa896e1cbce46b4895b7c71fba",
+			"revisionTime": "2019-11-27T22:15:08Z"
+		},
+		{
+			"checksumSHA1": "RoGgaIVKEJu8jxiuhWy0tURH8AA=",
+			"path": "github.com/antonmashko/envconf",
+			"revision": "a80acba595ab420eb5b35cc98d309da92ef74c1e",
+			"revisionTime": "2019-09-04T19:49:51Z"
+		}
+	],
+	"rootPath": "github.com/8bitdogs/goci"
+}
