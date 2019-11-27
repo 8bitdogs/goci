@@ -11,7 +11,7 @@ up:
 		--name ${NAME} \
 		-e GIT_USERNAME=${GIT_USERNAME} \
 		-e GIT_PASSWORD=${GIT_PASSWORD} \
-		-e SECRET=${SECRET} \
+		-e GIT_WEBHOOK_SECRET=${GIT_WEBHOOK_SECRET} \
 		-d \
 		${NAME}:${VERSION}
 
