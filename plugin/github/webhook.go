@@ -1,8 +1,12 @@
 package github
 
 import (
+	"bytes"
+	"crypto/hmac"
+	"crypto/sha1"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
@@ -14,21 +18,37 @@ import (
 type Webhook struct {
 	Timeout time.Duration
 	j       core.Job
+	secret  string
 }
 
-func NewWebhook(j core.Job) *Webhook {
+func NewWebhook(j core.Job, secret string) *Webhook {
 	return &Webhook{
 		j:       j,
 		Timeout: 8 * time.Second,
+		secret:  secret,
 	}
 }
 
 func (wb *Webhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var wp webhookPayload
 	requestID := core.RequestID(r.Context())
 	l := log.Copy(fmt.Sprintf("git-webhook-%d", requestID))
-	err := json.NewDecoder(r.Body).Decode(&wp)
+	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+		l.Errorf("failed to read git payload. err=%s", err)
+		return
+	}
+	// validate signature
+	if wb.secret != "" {
+		if !wb.validateSignature(b, r) {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+	}
+	//-----
+	var wp webhookPayload
+	if err = json.Unmarshal(b, &wp); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
 		l.Errorf("failed to unmarshal git payload. err=%s", err)
@@ -59,4 +79,13 @@ func (wb *Webhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("X-Request-ID", fmt.Sprint(requestID))
 		w.WriteHeader(http.StatusCreated)
 	}
+}
+
+func (wb *Webhook) validateSignature(payload []byte, r *http.Request) bool {
+	mac := hmac.New(sha1.New, []byte(wb.secret))
+	mac.Write(payload)
+	const headerName = "X-Hub-Signature"
+	const prefix = "sha1="
+	hv := r.Header.Get(headerName)
+	return hv != "" && hmac.Equal(bytes.TrimLeft([]byte(hv), prefix), mac.Sum(nil))
 }
