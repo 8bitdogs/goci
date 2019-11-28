@@ -12,7 +12,6 @@ type config struct {
 	CIFile   string `flag:"ci-config" default:"ci.json"`
 	LogLevel string `env:"LOG_LEVEL" default:"info"`
 	Github   struct {
-		Key    string `env:"GITHUB_WEBHOOK_KEY_NAME" default:"sha1"`
 		Secret string `env:"GITHUB_WEBHOOK_SECRET"`
 	}
 	Server struct {

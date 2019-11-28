@@ -1,9 +1,6 @@
 package github
 
 import (
-	"bytes"
-	"crypto/hmac"
-	"crypto/sha1"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -16,16 +13,16 @@ import (
 )
 
 type Webhook struct {
-	Timeout time.Duration
-	j       core.Job
-	secret  string
+	Timeout   time.Duration
+	j         core.Job
+	signature *signature
 }
 
 func NewWebhook(j core.Job, secret string) *Webhook {
 	return &Webhook{
-		j:       j,
-		Timeout: 8 * time.Second,
-		secret:  secret,
+		j:         j,
+		Timeout:   8 * time.Second,
+		signature: newSignature(secret),
 	}
 }
 
@@ -40,13 +37,10 @@ func (wb *Webhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// validate signature
-	if wb.secret != "" {
-		if !wb.validateSignature(b, r) {
-			w.WriteHeader(http.StatusForbidden)
-			return
-		}
+	if !wb.signature.validate(b, r) {
+		w.WriteHeader(http.StatusForbidden)
+		return
 	}
-	//-----
 	var wp webhookPayload
 	if err = json.Unmarshal(b, &wp); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -79,16 +73,4 @@ func (wb *Webhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("X-Request-ID", fmt.Sprint(requestID))
 		w.WriteHeader(http.StatusCreated)
 	}
-}
-
-func (wb *Webhook) validateSignature(payload []byte, r *http.Request) bool {
-	mac := hmac.New(sha1.New, []byte(wb.secret))
-	mac.Write(payload)
-	const headerName = "X-Hub-Signature"
-	const prefix = "sha1="
-	hv := r.Header.Get(headerName)
-	signature := mac.Sum(nil)
-	hs := bytes.TrimLeft([]byte(hv), prefix)
-	log.Debugf("comparing signature %s[%s] sha1=%x", hv, signature)
-	return hv != "" && hmac.Equal(hs, signature)
 }
