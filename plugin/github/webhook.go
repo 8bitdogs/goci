@@ -87,5 +87,8 @@ func (wb *Webhook) validateSignature(payload []byte, r *http.Request) bool {
 	const headerName = "X-Hub-Signature"
 	const prefix = "sha1="
 	hv := r.Header.Get(headerName)
-	return hv != "" && hmac.Equal(bytes.TrimLeft([]byte(hv), prefix), mac.Sum(nil))
+	signature := mac.Sum(nil)
+	hs := bytes.TrimLeft([]byte(hv), prefix)
+	log.Debugf("comparing signature %s[%s] sha1=%x", hv, signature)
+	return hv != "" && hmac.Equal(hs, signature)
 }
