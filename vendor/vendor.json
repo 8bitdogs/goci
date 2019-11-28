@@ -3,10 +3,10 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "+XWi+p3vglcYdDf6kjZPXvi8AeM=",
+			"checksumSHA1": "0SHJMYF8MkJr0vpv7EHX73CgDM0=",
 			"path": "github.com/8bitdogs/log",
-			"revision": "e3fa6fe20e1760b76cc98bf85c452f2ee3cabb23",
-			"revisionTime": "2019-02-14T19:49:43Z"
+			"revision": "b73745837def0b8e53e5c366a75a6cab87168b32",
+			"revisionTime": "2019-11-28T00:04:35Z"
 		},
 		{
 			"checksumSHA1": "NVqcLq7dSKx6GEjz6X5QWefG4Lk=",
