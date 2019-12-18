@@ -36,7 +36,7 @@ func (s *signature) validate(payload []byte, r *http.Request) bool {
 		log.Debugf("github-webhook: header %s not found", headerName)
 		return false
 	}
-	hSignature := strings.TrimLeft(hv, prefix)
+	hSignature := strings.TrimPrefix(hv, prefix)
 	signature, err := hex.DecodeString(hSignature)
 	if err != nil {
 		log.Debugf("github-webhook: failed to decode string %s err=%s", hSignature, err)
