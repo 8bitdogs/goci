@@ -31,6 +31,7 @@ func NewServer(addr string) *Server {
 	// logging
 	router.AppendInterceptor(func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 		log.Infof("request-%d %s %s %s %v", RequestID(r.Context()), r.Method, r.RequestURI, r.Proto, r.Header)
+		next(w, r)
 	})
 
 	return server
