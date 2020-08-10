@@ -1,7 +1,6 @@
-FROM golang:1.13.4-alpine
+FROM golang:1.14.6-alpine
 
-RUN apk add --no-cache git; \
-    go get -u github.com/kardianos/govendor
+RUN apk add --no-cache git
 
 RUN PATH=$PATH:$GOPATH/bin
 
@@ -12,11 +11,7 @@ WORKDIR ${WD}
 
 
 # install dependecies
-RUN if [ ! -d "vendor" ]; then \
-        govendor init; \
-    fi; \
-    govendor sync +v; \
-    govendor fetch +m
+RUN go mod download -x
 
 # build app
 RUN go build -o bin/goci .
