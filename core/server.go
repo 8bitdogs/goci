@@ -17,7 +17,10 @@ type Server struct {
 
 func NewServer(addr string) *Server {
 	router := ruffe.New()
-	server := &Server{addr: addr}
+	server := &Server{
+		addr:   addr,
+		router: router,
+	}
 
 	// add request id
 	router.AppendInterceptor(func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
