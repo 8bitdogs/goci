@@ -14,7 +14,7 @@ WORKDIR ${WD}
 RUN go mod download -x
 
 # build app
-RUN go build -o bin/goci .
+RUN go build -o bin/goci
 
 # -------------------------
 # build goci image
