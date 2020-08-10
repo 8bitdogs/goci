@@ -59,17 +59,31 @@ func (wb *Webhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	go func(payload *webhookPayload) {
 		l.Infoln("running job...")
 		err := wb.j.Run(r.Context())
-		lock <- err
+
+		if err != nil {
+			l.Errorf("run failed. error=%s", err)
+			select {
+			case _, ok := <-lock:
+				if !ok {
+					break
+				}
+			default:
+				lock <- err
+			}
+		}
+
 		result := StatusCreateRequest{
 			State:       Success.String(),
 			Description: "",
 			TargetURL:   fmt.Sprintf("http://ci.jared.in.ua/%d", requestID),
 			Context:     "8bitdogs/goci",
 		}
+
 		if err != nil {
 			result.State = Error.String()
 			result.Description = err.Error()
 		}
+
 		err = createStatus(payload, result)
 		if err != nil {
 			l.Errorf("failed to create github status. err=%s", err)
@@ -86,5 +100,6 @@ func (wb *Webhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case <-time.After(wb.Timeout):
 		w.Header().Add("X-Request-ID", fmt.Sprint(requestID))
 		w.WriteHeader(http.StatusCreated)
+		close(lock)
 	}
 }
