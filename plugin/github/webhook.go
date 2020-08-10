@@ -63,11 +63,12 @@ func (wb *Webhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		result := StatusCreateRequest{
 			State:       Success.String(),
 			Description: "",
-			TargetURL:   "http://jared.in.ua/",
-			Context:     "goci",
+			TargetURL:   fmt.Sprintf("http://ci.jared.in.ua/%d", requestID),
+			Context:     "8bitdogs/goci",
 		}
 		if err != nil {
 			result.State = Error.String()
+			result.Description = err.Error()
 		}
 		err = createStatus(payload, result)
 		if err != nil {

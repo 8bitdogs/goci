@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+
+	"github.com/8bitdogs/log"
 )
 
 // README: https://developer.github.com/v3/repos/statuses/#create-a-status
@@ -50,6 +52,9 @@ func createStatus(wp *webhookPayload, result StatusCreateRequest) error {
 
 	url := fmt.Sprintf("%s/repos%s/statuses/%s", host, wp.Repository.FullName, wp.After)
 
+	l := log.Copy(fmt.Sprintf("url=%s status=%s ci_url=%s", url, result.State, result.TargetURL))
+	l.Infoln("sendign status")
+
 	rs, err := http.Post(url, "application/json", strings.NewReader(string(b)))
 	if err != nil {
 		return err
@@ -58,5 +63,6 @@ func createStatus(wp *webhookPayload, result StatusCreateRequest) error {
 		return fmt.Errorf("invalid status code. url=%s status_code=%d", url, rs.StatusCode)
 	}
 
+	l.Infoln("Done")
 	return nil
 }
