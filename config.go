@@ -13,6 +13,7 @@ type config struct {
 	LogLevel string `env:"LOG_LEVEL" default:"info"`
 	Github   struct {
 		Secret string `env:"GITHUB_WEBHOOK_SECRET"`
+		Token  string `env:"GITHUB_TOKEN"`
 	}
 	Server struct {
 		Addr string `env:"SERVER_ADDR" default:":7878"`

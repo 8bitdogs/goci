@@ -16,14 +16,49 @@ type Webhook struct {
 	Timeout   time.Duration
 	j         core.Job
 	signature *signature
+	token     string
 }
 
-func NewWebhook(j core.Job, secret string) *Webhook {
+func NewWebhook(j core.Job, secret, token string) *Webhook {
 	return &Webhook{
 		j:         j,
 		Timeout:   8 * time.Second,
 		signature: newSignature(secret),
+		token:     token,
 	}
+}
+
+func (wb *Webhook) createStatus(wp *webhookPayload, result StatusCreateRequest) error {
+	const host = "https://api.github.com"
+	//POST /repos/:owner/:repo/statuses/:sha
+	b, err := json.Marshal(result)
+	if err != nil {
+		return err
+	}
+
+	url := fmt.Sprintf("%s/repos/%s/statuses/%s", host, wp.Repository.FullName, wp.After)
+
+	l := log.Copy(fmt.Sprintf("url=%s status=%s ci_url=%s", url, result.State, result.TargetURL))
+	l.Infoln("sendign status")
+
+	req, err := http.NewRequest(http.MethodPost, url, strings.NewReader(string(b)))
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Accept", "application/vnd.github.v3+json")
+	req.Header.Add("Authorization", fmt.Sprint("token ", wb.token))
+	rs, err := http.DefaultClient.Do(req)
+
+	if err != nil {
+		return err
+	}
+
+	if rs.StatusCode < 200 || rs.StatusCode > 299 {
+		return fmt.Errorf("invalid status code. url=%s status_code=%d", url, rs.StatusCode)
+	}
+
+	l.Infoln("Done")
+	return nil
 }
 
 func (wb *Webhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -84,7 +119,7 @@ func (wb *Webhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			result.Description = err.Error()
 		}
 
-		err = createStatus(payload, result)
+		err = wb.createStatus(payload, result)
 		if err != nil {
 			l.Errorf("failed to create github status. err=%s", err)
 		}
