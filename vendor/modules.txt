@@ -1,9 +1,0 @@
-# github.com/8bitdogs/log v0.0.0-20191128000435-b73745837def
-## explicit
-github.com/8bitdogs/log
-# github.com/8bitdogs/ruffe v1.4.1
-## explicit
-github.com/8bitdogs/ruffe
-# github.com/antonmashko/envconf v1.0.0
-## explicit
-github.com/antonmashko/envconf
