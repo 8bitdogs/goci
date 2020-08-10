@@ -69,7 +69,10 @@ func (wb *Webhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			result.State = Error.String()
 		}
-		createStatus(payload, result)
+		err = createStatus(payload, result)
+		if err != nil {
+			l.Errorf("failed to create github status. err=%s", err)
+		}
 	}(&wp)
 	select {
 	case err := <-lock:

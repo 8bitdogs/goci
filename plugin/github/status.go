@@ -48,7 +48,7 @@ func createStatus(wp *webhookPayload, result StatusCreateRequest) error {
 		return err
 	}
 
-	url := fmt.Sprintf("%s/repos%s/statuses/%s", wp.Repository.FullName, wp.After)
+	url := fmt.Sprintf("%s/repos%s/statuses/%s", host, wp.Repository.FullName, wp.After)
 
 	rs, err := http.Post(url, "application/json", strings.NewReader(string(b)))
 	if err != nil {
