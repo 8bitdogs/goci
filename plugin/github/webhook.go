@@ -56,11 +56,21 @@ func (wb *Webhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	lock := make(chan error)
-	go func() {
+	go func(payload webhookPayload) {
 		l.Infoln("running job...")
 		err := wb.j.Run(r.Context())
 		lock <- err
-	}()
+		result := StatusCreateRequest{
+			State:       Success.String(),
+			Description: "",
+			TargetURL:   "http://jared.in.ua/",
+			Context:     "goci",
+		}
+		if err != nil {
+			result.State = Error.String()
+		}
+		createStatus(&payload, result)
+	}(wp)
 	select {
 	case err := <-lock:
 		if err != nil {

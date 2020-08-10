@@ -1,0 +1,6 @@
+github.com/8bitdogs/log v0.0.0-20191128000435-b73745837def h1:g9jOBgM5+Lh5SuqOhRvt6pJYN4mGtPgh0zUIjrXx8EI=
+github.com/8bitdogs/log v0.0.0-20191128000435-b73745837def/go.mod h1:Gy0BgvZASoOxb5I+FgJpcssUDPytOr6+Zkh3LhigvKY=
+github.com/8bitdogs/ruffe v1.4.1 h1:i0PiLViLUCFh7s11zaWJ2EnSr67mPYFnJcmyEzjaNsA=
+github.com/8bitdogs/ruffe v1.4.1/go.mod h1:RH+cPAkie/BeCTJQnNdl4LQ2nsfxd+Sn2zw096qYxSk=
+github.com/antonmashko/envconf v1.0.0 h1:Ox9Fm2L1VHxVXY0yAMfpdXRzgCU2Y7N7AMMFVyZkT+c=
+github.com/antonmashko/envconf v1.0.0/go.mod h1:zPlNgpKBEwdh9C9eEkM7StF+LUut2t2DFkpPYmwt6rs=

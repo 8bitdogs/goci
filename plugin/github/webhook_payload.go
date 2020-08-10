@@ -13,7 +13,7 @@ type webhookPayload struct {
 	HeadCommit Commit `json:"head_commit"`
 	//BaseRef    interface{} `json:"base_ref"`
 	//Commits    []Commit    `json:"commits"`
-	//Repository Repository  `json:"repository"`
+	Repository Repository `json:"repository"`
 }
 
 type Commit struct {
