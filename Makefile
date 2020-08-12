@@ -9,11 +9,12 @@ build:
 up:
 	docker run \
 		--name ${NAME} \
-		-e GIT_USERNAME=${GIT_USERNAME} \
-		-e GIT_PASSWORD=${GIT_PASSWORD} \
-		-e GIT_WEBHOOK_SECRET=${GIT_WEBHOOK_SECRET} \
+		-v $(CURDIR):/usr/local/ci \
+		-e GITHUB_WEBHOOK_SECRET='' \
+		-e GITHUB_TOKEN='' \
 		-d \
-		${NAME}:${VERSION}
+		${NAME}:${VERSION} \
+		goci -ci-config /usr/local/ci/ci.json
 
 logs:
 	docker logs -f ${NAME}
