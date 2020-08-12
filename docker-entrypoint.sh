@@ -1,6 +1,6 @@
 #!/bin/sh
 set -eu
 
-git config --global url."https://${GIT_USERNAME}:${GIT_PASSWORD}@github".insteadOf https://github
+git config --global url.ssh://git@github.com/.insteadOf https://github.com/
 
 exec "$@"
