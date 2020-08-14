@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -17,14 +18,16 @@ type Webhook struct {
 	j         core.Job
 	signature *signature
 	token     string
+	host      string
 }
 
-func NewWebhook(j core.Job, secret, token string) *Webhook {
+func NewWebhook(j core.Job, secret, token, CIHost string) *Webhook {
 	return &Webhook{
 		j:         j,
 		Timeout:   8 * time.Second,
 		signature: newSignature(secret),
 		token:     token,
+		host:      strings.TrimRight(CIHost, "/ ") + "/",
 	}
 }
 
@@ -110,7 +113,7 @@ func (wb *Webhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		result := StatusCreateRequest{
 			State:       Success.String(),
 			Description: "",
-			TargetURL:   fmt.Sprintf("http://ci.jared.in.ua/%d", requestID),
+			TargetURL:   wb.host + strconv.FormatUint(requestID, 10),
 			Context:     "8bitdogs/goci",
 		}
 

@@ -18,7 +18,7 @@ func main() {
 	// adding webhook handlers
 	for _, s := range cfg.CI {
 		log.Infof("adding webhook: %s", s.WebhookPath)
-		gitWh := github.NewWebhook(pipeline.New(s.Dir), cfg.Github.Secret, cfg.Github.Token)
+		gitWh := github.NewWebhook(pipeline.New(s.Dir), cfg.Github.Secret, cfg.Github.Token, cfg.CIHost)
 		server.Handle(s.WebhookPath, s.Method, ruffe.HTTPHandlerFunc(gitWh.ServeHTTP))
 	}
 	log.Infof("starting server on '%s'", cfg.Server.Addr)

@@ -9,6 +9,7 @@ import (
 )
 
 type config struct {
+	CIHost   string `flag:"host" env:"CI_HOST"`
 	CIFile   string `flag:"ci-config" default:"ci.json"`
 	LogLevel string `env:"LOG_LEVEL" default:"info"`
 	Github   struct {
