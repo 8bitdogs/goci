@@ -3,35 +3,35 @@ package github
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
-	"strconv"
+	"net/url"
 	"strings"
 	"time"
 
-	"github.com/8bitdogs/goci/core"
-	"github.com/8bitdogs/log"
+	"goci/core"
+	"goci/plugin/github/option"
+	"goci/plugin/github/payload"
+
+	"github.com/rs/zerolog/log"
 )
 
 type Webhook struct {
-	Timeout   time.Duration
-	j         core.Job
+	pipeline  core.Pipeline
 	signature *signature
-	token     string
-	host      string
+	options   *option.Options
 }
 
-func NewWebhook(j core.Job, secret, token, CIHost string) *Webhook {
+func NewWebhook(p core.Pipeline, opts ...option.Option) *Webhook {
+	options := option.NewOptions(opts...)
 	return &Webhook{
-		j:         j,
-		Timeout:   8 * time.Second,
-		signature: newSignature(secret),
-		token:     token,
-		host:      strings.TrimRight(CIHost, "/ ") + "/",
+		pipeline:  p,
+		options:   options,
+		signature: newSignature(options.Secret()),
 	}
 }
 
-func (wb *Webhook) createStatus(wp *webhookPayload, result StatusCreateRequest) error {
+func (wb *Webhook) createStatus(r payload.Request, result *payload.StatusCreateRequest) error {
 	const host = "https://api.github.com"
 	//POST /repos/:owner/:repo/statuses/:sha
 	b, err := json.Marshal(result)
@@ -39,67 +39,161 @@ func (wb *Webhook) createStatus(wp *webhookPayload, result StatusCreateRequest) 
 		return err
 	}
 
-	url := fmt.Sprintf("%s/repos/%s/statuses/%s", host, wp.Repository.FullName, wp.After)
+	url := fmt.Sprintf("%s/repos/%s/statuses/%s", host, r.FullName(), r.Sha())
 
-	l := log.Copy(fmt.Sprintf("url=%s status=%s ci_url=%s", url, result.State, result.TargetURL))
-	l.Infoln("sendign status")
+	l := log.With().
+		Str("url", url).
+		Str("status", result.State).
+		Str("ci_url", result.TargetURL).
+		Str("body", string(b)).
+		Logger()
+
+	l.Debug().Msg("sending status")
 
 	req, err := http.NewRequest(http.MethodPost, url, strings.NewReader(string(b)))
 	if err != nil {
+		l.Error().Err(err).Msg("failed to create request")
 		return err
 	}
-	req.Header.Add("Accept", "application/vnd.github.v3+json")
-	req.Header.Add("Authorization", fmt.Sprint("token ", wb.token))
+	req.Header.Add("Accept", "application/vnd.github+json")
+	req.Header.Add("Authorization", fmt.Sprint("Bearer ", wb.options.Token()))
 	rs, err := http.DefaultClient.Do(req)
-
 	if err != nil {
+		l.Error().Err(err).Msg("failed to send status")
 		return err
 	}
 
 	if rs.StatusCode < 200 || rs.StatusCode > 299 {
-		return fmt.Errorf("invalid status code. url=%s status_code=%d", url, rs.StatusCode)
+		err := fmt.Errorf("invalid status code. url=%s status_code=%d", url, rs.StatusCode)
+		l.Error().Err(err).Msg("failed to send status")
+		return err
 	}
 
-	l.Infoln("Done")
+	l.Debug().Msg("Done")
 	return nil
 }
 
 func (wb *Webhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	requestID := core.RequestID(r.Context())
-	l := log.Copy(fmt.Sprintf("git-webhook-%d", requestID))
-	b, err := ioutil.ReadAll(r.Body)
+	l := log.With().
+		Uint64("request_id", requestID).
+		Logger()
+	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
-		l.Errorf("failed to read git payload. err=%s", err)
+		l.Error().Err(err).Msg("failed to read git payload")
 		return
 	}
 	// validate signature
 	if !wb.signature.validate(b, r) {
 		w.WriteHeader(http.StatusForbidden)
+		w.Write([]byte(http.StatusText(http.StatusForbidden)))
+		l.Warn().Msg("invalid signature")
 		return
 	}
-	var wp webhookPayload
-	if err = json.Unmarshal(b, &wp); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
-		l.Errorf("failed to unmarshal git payload. err=%s", err)
-		return
-	}
-	l.Infof("received git webhook. message=%s author=%s branch=%s", wp.HeadCommit.Message, wp.HeadCommit.Author, wp.Ref)
-	const master = "refs/heads/master"
-	if !strings.EqualFold(master, wp.Ref) {
+
+	var webhookRequest payload.Request
+	const eventHeader = "X-GitHub-Event"
+	const contentTypeHeader = "Content-Type"
+	eventType := r.Header.Get(eventHeader)
+	if eventType == "" || !wb.options.IsEventType(eventType) {
 		w.WriteHeader(http.StatusAccepted)
-		w.Write([]byte("Payload not for master, aborting"))
+		fmt.Fprintf(w, "skipped. expected %s got %s", wb.options.EventType(), eventType)
+		l.Debug().Str("expected_event_type", wb.options.EventType()).Str("event_type", eventType).Msg("unsupported event type")
 		return
 	}
+
+	contentType := r.Header.Get(contentTypeHeader)
+	switch eventType {
+	case "ping":
+		p := &payload.Ping{}
+		l.Debug().Msg("received ping request")
+		if err := wb.unmarshalPayload(b, contentType, p); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(http.StatusText(http.StatusBadRequest)))
+			l.Error().Err(err).Msg("failed to unmarshal ping payload")
+			return
+		}
+		webhookRequest = p
+	case "push":
+		pp := &payload.Push{}
+		if err := wb.unmarshalPayload(b, contentType, pp); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(http.StatusText(http.StatusBadRequest)))
+			l.Error().Err(err).Msg("failed to unmarshal push payload")
+			return
+		}
+		l.Debug().
+			Str("ref", pp.Ref).
+			Str("message", pp.HeadCommit.Message).
+			Str("author", pp.HeadCommit.HeadCommitAuthor.Name).
+			Str("branch", pp.Ref).
+			Msg("received push request")
+		webhookRequest = pp
+	case "workflow_job":
+		wj := &payload.WorkflowJob{}
+		if err := wb.unmarshalPayload(b, contentType, wj); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(http.StatusText(http.StatusBadRequest)))
+			l.Error().Err(err).Msg("failed to unmarshal workflow_job payload")
+			return
+		}
+
+		if wb.options.WorkflowName() != "" && !wb.options.IsWorkflowName(wj.WorkflowJob.WorkflowName) {
+			l.Debug().Str("workflow", wj.WorkflowJob.WorkflowName).Msg("skipped. workflow name does not match")
+			w.WriteHeader(http.StatusAccepted)
+			fmt.Fprintf(w, "skipped. workflow name '%s' does not match target workflow name '%s'",
+				wj.WorkflowJob.WorkflowName,
+				wb.options.WorkflowName())
+			return
+		}
+
+		if wb.options.WorkflowJobName() == "" || !wb.options.IsWorkflowJobName(wj.WorkflowJob.Name) {
+			l.Debug().Str("job", wj.WorkflowJob.Name).Msg("skipped. workflow job name does not match")
+			w.WriteHeader(http.StatusAccepted)
+			fmt.Fprintf(w, "skipped. workflow job name '%s' does not match target workflow job name '%s'",
+				wj.WorkflowJob.Name,
+				wb.options.WorkflowJobName())
+			return
+		}
+
+		if wb.options.WorkflowAction() == "" || !wb.options.IsWorkflowAction(wj.Action) {
+			l.Debug().Str("action", wj.Action).Msg("skipped. workflow action does not match")
+			w.WriteHeader(http.StatusAccepted)
+			fmt.Fprintf(w, "skipped. workflow action '%s' does not match target workflow action '%s'",
+				wj.Action,
+				wb.options.WorkflowAction())
+			return
+		}
+
+		l.Debug().
+			Str("workflow", wj.WorkflowJob.WorkflowName).
+			Str("job", wj.WorkflowJob.Name).
+			Str("action", wj.Action).
+			Msg("received workflow_job request")
+		webhookRequest = wj
+	default:
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, "unsupported event type: %s", eventType)
+		return
+	}
+
+	if !strings.EqualFold(wb.options.TargetBranch(), webhookRequest.TargetBranch()) {
+		w.WriteHeader(http.StatusAccepted)
+		fmt.Fprintf(w, "skipped. branch '%s' does not match target branch '%s'",
+			webhookRequest.TargetBranch(),
+			wb.options.TargetBranch())
+		return
+	}
+
 	lock := make(chan error)
-	go func(payload *webhookPayload) {
-		l.Infoln("running job...")
-		err := wb.j.Run(r.Context())
+	go func(data payload.Request) {
+		l.Debug().Msg("running job...")
+		err := wb.pipeline.Run(r.Context())
 
 		if err != nil {
-			l.Errorf("run failed. error=%s", err)
+			l.Error().Err(err).Msg("run failed")
 			select {
 			case _, ok := <-lock:
 				if !ok {
@@ -110,34 +204,51 @@ func (wb *Webhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		result := StatusCreateRequest{
-			State:       Success.String(),
+		result := payload.StatusCreateRequest{
+			State:       payload.Success.String(),
 			Description: "",
-			TargetURL:   wb.host + strconv.FormatUint(requestID, 10),
-			Context:     "8bitdogs/goci",
+			TargetURL:   "", // wb.options.CIHostUrl() + strconv.FormatUint(requestID, 10),
+			Context:     wb.options.WorkflowStatusContext(),
 		}
 
 		if err != nil {
-			result.State = Error.String()
+			result.State = payload.Error.String()
 			result.Description = err.Error()
 		}
 
-		err = wb.createStatus(payload, result)
+		err = wb.createStatus(data, &result)
 		if err != nil {
-			l.Errorf("failed to create github status. err=%s", err)
+			l.Error().Err(err).Msg("failed to create github status")
 		}
-	}(&wp)
+	}(webhookRequest)
+
 	select {
 	case err := <-lock:
 		if err != nil {
-			l.Infof("failed. err=%s", err)
+			l.Error().Err(err).Msg("failed")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		l.Infof("job finished successful")
-	case <-time.After(wb.Timeout):
+		l.Debug().Msg("job finished successful")
+	case <-time.After(wb.options.Timeout()):
 		w.Header().Add("X-Request-ID", fmt.Sprint(requestID))
 		w.WriteHeader(http.StatusCreated)
 		close(lock)
+	}
+}
+
+func (wb *Webhook) unmarshalPayload(b []byte, contentType string, data any) error {
+	switch contentType {
+	case "application/json":
+		return json.Unmarshal(b, data)
+	case "application/x-www-form-urlencoded":
+		values, err := url.ParseQuery(string(b))
+		if err != nil {
+			return err
+		}
+		payload := values.Get("payload")
+		return json.Unmarshal([]byte(payload), data)
+	default:
+		return fmt.Errorf("unsupported content type: %s", contentType)
 	}
 }

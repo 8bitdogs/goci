@@ -10,8 +10,7 @@ up:
 	docker run \
 		--name ${NAME} \
 		-v $(CURDIR):/usr/local/ci \
-		-e GITHUB_WEBHOOK_SECRET='' \
-		-e GITHUB_TOKEN='' \
+		--env-file .env \
 		-d \
 		${NAME}:${VERSION} \
 		goci -ci-config /usr/local/ci/ci.json

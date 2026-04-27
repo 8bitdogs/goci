@@ -1,4 +1,4 @@
-package github
+package payload
 
 // README: https://developer.github.com/v3/repos/statuses/#create-a-status
 
@@ -28,7 +28,7 @@ const (
 
 type StatusCreateRequest struct {
 	State       string `json:"state"`
-	TargetURL   string `json:"target_url"`
-	Description string `json:"description"`
+	TargetURL   string `json:"target_url,omitempty"`
+	Description string `json:"description,omitempty"`
 	Context     string `json:"context"`
 }

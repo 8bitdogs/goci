@@ -5,6 +5,10 @@
 *.so
 *.dylib
 
+
+.env
+config.yaml
+
 # Test binary, build with `go test -c`
 *.test
 
@@ -12,3 +16,5 @@
 *.out
 
 vendor/
+
+test/

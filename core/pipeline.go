@@ -2,6 +2,6 @@ package core
 
 import "context"
 
-type Job interface {
+type Pipeline interface {
 	Run(context.Context) error
 }

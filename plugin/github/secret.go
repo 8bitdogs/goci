@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/8bitdogs/log"
+	"github.com/rs/zerolog/log"
 )
 
 type signature struct {
@@ -33,13 +33,17 @@ func (s *signature) validate(payload []byte, r *http.Request) bool {
 	s.mac.Write(payload)
 	hv := r.Header.Get(headerName)
 	if hv == "" {
-		log.Debugf("github-webhook: header %s not found", headerName)
+		log.Debug().Str("header", headerName).Msg("github-webhook: header not found")
 		return false
 	}
 	hSignature := strings.TrimPrefix(hv, prefix)
 	signature, err := hex.DecodeString(hSignature)
 	if err != nil {
-		log.Debugf("github-webhook: failed to decode string %s err=%s", hSignature, err)
+		log.Debug().
+			Str("header", headerName).
+			Str("value", hSignature).
+			Err(err).
+			Msg("github-webhook: failed to decode string")
 		return false
 	}
 	result := hmac.Equal(signature, s.mac.Sum(nil))
