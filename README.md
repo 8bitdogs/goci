@@ -63,19 +63,19 @@ These are global defaults. Any value can be overridden per-service in the config
 
 | Variable | Default | Description |
 |---|---|---|
-| `CI_HOST` | _(empty)_ | Optional. Public URL of this goci instance. Used in status update descriptions. |
-| `SERVER_ADDR` | `:7878` | Address and port for the goci HTTP server. |
-| `LOG_LEVEL` | `info` | Log verbosity: `debug`, `info`, `warn`, `error`. |
-| `GITHUB_TOKEN` | _(required)_ | GitHub personal access token (or `GITHUB_TOKEN` from Actions). Used to set commit statuses. |
-| `GITHUB_WEBHOOK_SECRET` | _(empty)_ | Secret used to validate incoming GitHub webhooks. |
-| `GITHUB_METHOD` | `POST` | HTTP method expected for the webhook endpoint. |
-| `GITHUB_RESPONSE_TIMEOUT` | `10s` | Timeout for outbound GitHub API calls. |
-| `GITHUB_TARGET_BRANCH` | `main` | Only process events targeting this branch. |
-| `GITHUB_EVENT_TYPE` | `push` | GitHub event type to listen for. Use `workflow_job` for workflow-driven deployments. |
-| `GITHUB_COMMIT_STATUS_CONTEXT` | `goci/deploy` | Context string for GitHub commit status updates. Must match the `context` field in your GitHub Actions `wait-commit-status` step. |
-| `GITHUB_WORKFLOW_NAME` | _(empty)_ | Optional. Filter by workflow name (the `name:` field at the root of the workflow YAML). |
-| `GITHUB_WORKFLOW_JOB_NAME` | _(required for `workflow_job`)_ | Name of the GitHub Actions job whose completion triggers goci. |
-| `GITHUB_WORKFLOW_ACTION` | `completed` | Workflow job action to react to: `queued`, `in_progress`, or `completed`. |
+| `GOCI_HOST` | _(empty)_ | Optional. Public URL of this goci instance. Used in status update descriptions. |
+| `GOCI_SERVER_ADDR` | `:7878` | Address and port for the goci HTTP server. |
+| `GOCI_LOG_LEVEL` | `info` | Log verbosity: `debug`, `info`, `warn`, `error`. |
+| `GOCI_GITHUB_TOKEN` | _(required)_ | GitHub personal access token (or `GITHUB_TOKEN` from Actions). Used to set commit statuses. |
+| `GOCI_GITHUB_WEBHOOK_SECRET` | _(empty)_ | Secret used to validate incoming GitHub webhooks. |
+| `GOCI_GITHUB_METHOD` | `POST` | HTTP method expected for the webhook endpoint. |
+| `GOCI_GITHUB_RESPONSE_TIMEOUT` | `10s` | Timeout for outbound GitHub API calls. |
+| `GOCI_GITHUB_TARGET_BRANCH` | `main` | Only process events targeting this branch. |
+| `GOCI_GITHUB_EVENT_TYPE` | `push` | GitHub event type to listen for. Use `workflow_job` for workflow-driven deployments. |
+| `GOCI_GITHUB_COMMIT_STATUS_CONTEXT` | `goci/pipeline` | Context string for GitHub commit status updates. Must match the `context` field in your GitHub Actions `wait-commit-status` step. |
+| `GOCI_GITHUB_WORKFLOW_NAME` | _(empty)_ | Optional. Filter by workflow name (the `name:` field at the root of the workflow YAML). |
+| `GOCI_GITHUB_WORKFLOW_JOB_NAME` | _(required for `workflow_job`)_ | Name of the GitHub Actions job whose completion triggers goci. |
+| `GOCI_GITHUB_WORKFLOW_ACTION` | `completed` | Workflow job action to react to: `queued`, `in_progress`, or `completed`. |
 
 See [`.env.example`](.env.example) for a ready-to-copy template.
 
@@ -106,16 +106,17 @@ Defines one or more services, each with its own pipeline and GitHub webhook sett
             dir: "/app"
             timeout: 30s
   github:
-    path: "/webhook/my-service"          # GitHub webhook URL path
-    method: "POST"                        # optional, default POST
-    secret: "<webhook-secret>"            # overrides GITHUB_WEBHOOK_SECRET
-    token: "<github-token>"              # overrides GITHUB_TOKEN
-    branch: "main"                        # target branch filter
-    event: "workflow_job"                 # event type
-    commit_status_context: "goci/deploy" # overrides GITHUB_COMMIT_STATUS_CONTEXT
-    workflow:
-      action: "completed"
-      job_name: "build-and-push"         # GitHub Actions job name that triggers goci
+    token: "<github-token>"              # overrides GOCI_GITHUB_TOKEN
+    webhook:
+      path: "/webhook/my-service"          # GitHub webhook URL path
+      method: "POST"                        # optional, default POST
+      secret: "<webhook-secret>"            # overrides GOCI_GITHUB_WEBHOOK_SECRET
+      branch: "main"                        # target branch filter
+      event: "workflow_job"                 # event type
+      commit_status_context: "goci/deploy" # overrides GOCI_GITHUB_COMMIT_STATUS_CONTEXT
+      workflow:
+        action: "completed"
+        job_name: "build-and-push"         # GitHub Actions job name that triggers goci
 ```
 
 **JSON example:** see [`config.json.example`](config.json.example).
@@ -186,14 +187,14 @@ jobs:
       - uses: 8bitdogs/wait-commit-status@main
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          context: goci/deploy   # must match GITHUB_COMMIT_STATUS_CONTEXT or service config
+          context: goci/deploy   # must match GOCI_GITHUB_COMMIT_STATUS_CONTEXT or service config
           interval: 5            # poll every 5 seconds
           timeout: 300           # fail after 5 minutes
 ```
 
 The `deploy` job will block until goci sets the commit status to `success` or `failure`, ensuring your workflow reflects the actual deployment result.
 
-> The `context` value must exactly match `GITHUB_COMMIT_STATUS_CONTEXT` (env) or `commit_status_context` in your service config.
+> The `context` value must exactly match `GOCI_GITHUB_COMMIT_STATUS_CONTEXT` (env) or `commit_status_context` in your service config.
 
 ---
 
@@ -218,7 +219,7 @@ Select **`application/json`**.
 
 ### 3. Secret
 
-Generate a high-entropy secret and paste it into the **Secret** field. Use the same value for `GITHUB_WEBHOOK_SECRET` (env) or `secret` in your service config.
+Generate a high-entropy secret and paste it into the **Secret** field. Use the same value for `GOCI_GITHUB_WEBHOOK_SECRET` (env) or `secret` in your service config.
 
 ```sh
 openssl rand -hex 32
@@ -231,8 +232,8 @@ Choose **"Let me select individual events"** and enable:
 | Event | Purpose |
 |---|---|
 | **Ping** | Verifies the webhook is reachable (always enable) |
-| **Push** | Triggers goci on `push` events (`GITHUB_EVENT_TYPE=push`) |
-| **Workflow jobs** | Triggers goci when a workflow job completes (`GITHUB_EVENT_TYPE=workflow_job`) |
+| **Push** | Triggers goci on `push` events (`GOCI_GITHUB_EVENT_TYPE=push`) |
+| **Workflow jobs** | Triggers goci when a workflow job completes (`GOCI_GITHUB_EVENT_TYPE=workflow_job`) |
 
 Disable all other events to reduce noise.
 
