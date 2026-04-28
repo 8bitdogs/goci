@@ -67,6 +67,7 @@ These are global defaults. Any value can be overridden per-service in the config
 | `GOCI_SERVER_ADDR` | `:7878` | Address and port for the goci HTTP server. |
 | `GOCI_LOG_LEVEL` | `info` | Log verbosity: `debug`, `info`, `warn`, `error`. |
 | `GOCI_GITHUB_TOKEN` | _(required)_ | GitHub personal access token (or `GITHUB_TOKEN` from Actions). Used to set commit statuses. |
+| `GOCI_GITHUB_WEBHOOK_PATH_PREFIX` | _(empty)_ | Optional. Path prefix applied to all service webhook URLs. When set, the effective webhook path for each service becomes `<prefix>/<service-name>`, overriding the `path` field in the service config. Trailing slashes are stripped automatically. |
 | `GOCI_GITHUB_WEBHOOK_SECRET` | _(empty)_ | Secret used to validate incoming GitHub webhooks. |
 | `GOCI_GITHUB_METHOD` | `POST` | HTTP method expected for the webhook endpoint. |
 | `GOCI_GITHUB_RESPONSE_TIMEOUT` | `10s` | Timeout for outbound GitHub API calls. |
@@ -183,6 +184,8 @@ jobs:
     name: deploy
     needs: docker
     runs-on: ubuntu-latest
+    permissions:
+      statuses: read         # wait-commit-status polls the commit status
     steps:
       - uses: 8bitdogs/wait-commit-status@main
         with:
@@ -193,6 +196,16 @@ jobs:
 ```
 
 The `deploy` job will block until goci sets the commit status to `success` or `failure`, ensuring your workflow reflects the actual deployment result.
+
+### Required permissions
+
+The only permission required for goci integration is:
+
+| Permission | Job | Why |
+|---|---|---|
+| `statuses: read` | `deploy` | `wait-commit-status` polls commit statuses until goci responds |
+
+> goci writes commit statuses using its own `GOCI_GITHUB_TOKEN` (a PAT configured on the server), not the workflow's `GITHUB_TOKEN`. The workflow only needs `statuses: read` so `wait-commit-status` can poll for the result.
 
 > The `context` value must exactly match `GOCI_GITHUB_COMMIT_STATUS_CONTEXT` (env) or `commit_status_context` in your service config.
 

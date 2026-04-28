@@ -32,6 +32,7 @@ type config struct {
 
 	Github struct {
 		Token               string        `env:"GOCI_GITHUB_TOKEN"`
+		WebhookPathPrefix   string        `env:"GOCI_GITHUB_WEBHOOK_PATH_PREFIX"`
 		Method              string        `env:"GOCI_GITHUB_METHOD" default:"POST"`
 		ResponseTimeout     time.Duration `env:"GOCI_GITHUB_RESPONSE_TIMEOUT" default:"10s"`
 		Secret              string        `env:"GOCI_GITHUB_WEBHOOK_SECRET"`
@@ -80,6 +81,8 @@ func parse() (*config, []serviceConfig, error) {
 		return nil, nil, fmt.Errorf("unsupported config file format: %s. use one of .yaml, .yml, .json", ext)
 	}
 
+	cfg.Github.WebhookPathPrefix = strings.TrimSuffix(strings.TrimSpace(cfg.Github.WebhookPathPrefix), "/")
+
 	for i, s := range serviceCfg {
 		if s.Github.Webhook.Method == "" {
 			if cfg.Github.Method != "" {
@@ -99,6 +102,11 @@ func parse() (*config, []serviceConfig, error) {
 
 		if s.Github.Webhook.Branch == "" {
 			serviceCfg[i].Github.Webhook.Branch = cfg.Github.TargetBranch
+		}
+
+		if cfg.Github.WebhookPathPrefix != "" {
+			serviceCfg[i].Github.Webhook.Path = fmt.Sprintf("%s/%s",
+				cfg.Github.WebhookPathPrefix, strings.TrimPrefix(strings.TrimSpace(s.Name), "/"))
 		}
 
 		// if s.Github.Webhook.ResponseTimeout == 0 {
