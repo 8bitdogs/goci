@@ -18,29 +18,29 @@ import (
 )
 
 type config struct {
-	CIHost     string `flag:"host" env:"CI_HOST"`
+	CIHost     string `flag:"host" env:"GOCI_HOST"`
 	ConfigFile string `flag:"config" default:"config.json"`
-	TaskQSize  int    `flag:"taskq-size" env:"TASKQ_SIZE" default:"100"`
+	TaskQSize  int    `flag:"taskq-size" env:"GOCI_TASKQ_SIZE" default:"100"`
 
 	Server struct {
-		Addr string `env:"SERVER_ADDR" default:":7878"`
+		Addr string `env:"GOCI_SERVER_ADDR" default:":7878"`
 	}
 
 	Log struct {
-		Level zerolog.Level `env:"LOG_LEVEL" default:"info"`
+		Level zerolog.Level `env:"GOCI_LOG_LEVEL" default:"info"`
 	}
 
 	Github struct {
-		Token               string        `env:"GITHUB_TOKEN"`
-		Method              string        `env:"GITHUB_METHOD" default:"POST"`
-		ResponseTimeout     time.Duration `env:"GITHUB_RESPONSE_TIMEOUT" default:"10s"`
-		Secret              string        `env:"GITHUB_WEBHOOK_SECRET"`
-		TargetBranch        string        `env:"GITHUB_TARGET_BRANCH" default:"main"`
-		EventType           string        `env:"GITHUB_EVENT_TYPE" default:"push"`
-		CommitStatusContext string        `env:"GITHUB_COMMIT_STATUS_CONTEXT" default:"goci/pipeline"`
-		WorkflowName        string        `env:"GITHUB_WORKFLOW_NAME"`
-		WorkflowJobName     string        `env:"GITHUB_WORKFLOW_JOB_NAME"`
-		WorkflowAction      string        `env:"GITHUB_WORKFLOW_ACTION" default:"completed"`
+		Token               string        `env:"GOCI_GITHUB_TOKEN"`
+		Method              string        `env:"GOCI_GITHUB_METHOD" default:"POST"`
+		ResponseTimeout     time.Duration `env:"GOCI_GITHUB_RESPONSE_TIMEOUT" default:"10s"`
+		Secret              string        `env:"GOCI_GITHUB_WEBHOOK_SECRET"`
+		TargetBranch        string        `env:"GOCI_GITHUB_TARGET_BRANCH" default:"main"`
+		EventType           string        `env:"GOCI_GITHUB_EVENT_TYPE" default:"push"`
+		CommitStatusContext string        `env:"GOCI_GITHUB_COMMIT_STATUS_CONTEXT" default:"goci/pipeline"`
+		WorkflowName        string        `env:"GOCI_GITHUB_WORKFLOW_NAME"`
+		WorkflowJobName     string        `env:"GOCI_GITHUB_WORKFLOW_JOB_NAME"`
+		WorkflowAction      string        `env:"GOCI_GITHUB_WORKFLOW_ACTION" default:"completed"`
 	}
 }
 
