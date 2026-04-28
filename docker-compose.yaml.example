@@ -1,0 +1,17 @@
+name: "8bitdogs"
+
+services:
+
+  # other services...
+
+  goci:
+    image: 8bitdogs/goci
+    container_name: goci
+    env_file:
+      - .env # environment variables (top level configuration) for goci configuration
+    volumes:
+      - ~/.docker/config.json:/root/.docker/config.json:ro # mount docker config for registry authentication
+      - /var/run/docker.sock:/var/run/docker.sock # mount docker socket to allow goci to control docker
+      - ./docker-compose.yaml:/docker-compose.yaml # mount docker-compose file to allow goci to control the service
+      - ./config.yaml:/config.yaml # mount goci configuration file
+    command: goci -config /config.yaml
