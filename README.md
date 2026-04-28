@@ -238,7 +238,15 @@ Disable all other events to reduce noise.
 
 ### 5. Verify
 
-After saving, GitHub immediately sends a `ping` event. Open the **Recent Deliveries** tab and confirm the ping delivery shows a `200` response. If it fails, check that goci is running and the Payload URL is reachable.
+After saving, GitHub immediately sends a `ping` event. Open the **Recent Deliveries** tab and check the response code:
+
+| Status | Meaning |
+|---|---|
+| `200` | Webhook validated and pipeline executed |
+| `202` | Webhook validated but nothing matched (no pipeline executed) |
+| `4xx` / `5xx` | Error — see the response payload message for details |
+
+Any other status or a failed delivery means goci is unreachable or the payload was rejected — check that goci is running, the Payload URL is correct, and the secret matches.
 
 ---
 

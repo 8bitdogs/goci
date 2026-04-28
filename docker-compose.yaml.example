@@ -5,7 +5,7 @@ services:
   # other services...
 
   goci:
-    image: 8bitdogs/goci:2.0.4
+    image: 8bitdogs/goci:2.0.5
     container_name: goci
     env_file:
       - .env # environment variables (top level configuration) for goci configuration
