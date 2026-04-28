@@ -36,10 +36,10 @@ Key features:
        │                                            [1] set commit status: pending
        │                                                   │
   Actions: deploy job                               [2] run pipeline
-  (waiting for commit status)                             ├─ pull new image
-       │                                                  ├─ redeploy service
-       │                                                  └─ run steps
-       │                                                   │
+  (waiting for commit status)                              ├─ pull new image
+       │                                                   ├─ redeploy service
+       │                                                   └─ run steps
+       │                                                    │
        │                                            [3] set commit status
        │                                             ┌──────┴────────┐
        │                                          success         failure
