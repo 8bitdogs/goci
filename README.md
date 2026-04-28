@@ -1,9 +1,11 @@
 # GOCI
 
-[![Docker Pulls](https://img.shields.io/docker/pulls/8bitdogs/goci)](https://hub.docker.com/r/8bitdogs/goci)
+[![Docker Image Version](https://img.shields.io/docker/v/8bitdogs/goci?sort=semver&label=latest)](https://hub.docker.com/r/8bitdogs/goci)
+[![Docker Hub Pulls](https://img.shields.io/docker/pulls/8bitdogs/goci)](https://hub.docker.com/r/8bitdogs/goci)
 [![Docker Stars](https://img.shields.io/docker/stars/8bitdogs/goci)](https://hub.docker.com/r/8bitdogs/goci)
 [![Docker Cloud Automated build](https://img.shields.io/docker/cloud/build/8bitdogs/goci.svg)](https://hub.docker.com/r/8bitdogs/goci)
 [![GitHub](https://img.shields.io/github/license/8bitdogs/goci)](LICENSE)
+[![Go Report Card](https://goreportcard.com/badge/github.com/8bitdogs/goci)](https://goreportcard.com/report/github.com/8bitdogs/goci)
 
 ## Description
 
@@ -117,6 +119,18 @@ Defines one or more services, each with its own pipeline and GitHub webhook sett
 ```
 
 **JSON example:** see [`config.json.example`](config.json.example).
+
+---
+
+## Pull the image
+
+```sh
+# Docker Hub
+docker pull 8bitdogs/goci:latest
+
+# GitHub Container Registry
+docker pull ghcr.io/8bitdogs/goci:latest
+```
 
 ---
 

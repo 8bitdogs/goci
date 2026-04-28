@@ -33,7 +33,7 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push
@@ -44,5 +44,5 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository }}:${{ steps.version.outputs.VERSION }}
             ghcr.io/${{ github.repository }}:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/goci:${{ steps.version.outputs.VERSION }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/goci:latest
+            ${{ secrets.DOCKERHUB_ORG }}/goci:${{ steps.version.outputs.VERSION }}
+            ${{ secrets.DOCKERHUB_ORG }}/goci:latest
