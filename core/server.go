@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"sync/atomic"
 
-	"github.com/8bitdogs/log"
 	"github.com/8bitdogs/ruffe"
+	"github.com/rs/zerolog/log"
 )
 
 type Server struct {
@@ -30,15 +30,21 @@ func NewServer(addr string) *Server {
 
 	// logging
 	router.AppendInterceptor(func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-		log.Infof("request-%d %s %s %s %v", RequestID(r.Context()), r.Method, r.RequestURI, r.Proto, r.Header)
+		log.Info().
+			Uint64("request_id", RequestID(r.Context())).
+			Str("method", r.Method).
+			Str("request_uri", r.RequestURI).
+			Str("proto", r.Proto).
+			Interface("header", r.Header).
+			Msg("incoming request")
 		next(w, r)
 	})
 
 	return server
 }
 
-func (s *Server) Handle(patter, method string, h ruffe.Handler) {
-	s.router.Handle(patter, method, h)
+func (s *Server) Handle(pattern, method string, h ruffe.Handler) {
+	s.router.Handle(pattern, method, h)
 }
 
 func (s *Server) Use(h ruffe.Handler) {

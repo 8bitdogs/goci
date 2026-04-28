@@ -1,0 +1,39 @@
+[
+    {
+        "name": "Service1",
+        "pipeline": {
+            "jobs": [
+                {
+                    "name": "Job1",
+                    "steps": [
+                        {
+                            "name": "Step1",
+                            "cmd": "echo",
+                            "args": [
+                                "Hello, World!"
+                            ],
+                            "dir": "/app",
+                            "timeout": "5s"
+                        }
+                    ]
+                }
+            ]
+        },
+        "github": {
+            "token": "<specify service related token here>",
+            "webhook": {
+                "path": "/webhook-path",
+                "method": "POST",
+                "secret": "<specify service related secret here>",
+                "branch": "main",
+                "event": "workflow_job",
+                "commit_status_context": "goci/pipeline",
+                "workflow": {
+                    "action": "completed",
+                    "job_name": "predeploy",
+                    "status_context": "goci/deploy"
+                }
+            }
+        }
+    }
+]

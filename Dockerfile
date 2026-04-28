@@ -1,33 +1,18 @@
-FROM golang:1.14.6-alpine
+FROM golang:1.25.9-alpine AS builder
 
-RUN apk add --no-cache git
+COPY ./ /app
+WORKDIR /app
 
-RUN PATH=$PATH:$GOPATH/bin
-
-ENV WD=${GOPATH}/src/github.com/8bitdogs/goci
-COPY ./ ${WD}
-
-WORKDIR ${WD}
-
-
-# install dependecies
-RUN go mod download -x
-RUN go mod vendor
+RUN go mod tidy
 
 # build app
-RUN go build -o bin/goci .
+RUN go build -o /app/bin/goci .
 
 # -------------------------
 # build goci image
 #--------------------------
-FROM docker:19.03-git
+FROM docker:29.4.1-alpine3.23
 
-RUN apk add --update make
-RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
-
-COPY --from=0 /go/src/github.com/8bitdogs/goci/bin/goci /usr/local/bin/goci
-COPY docker-entrypoint.sh /usr/local/bin/ 	
-
-ENTRYPOINT [ "docker-entrypoint.sh" ]
+COPY --from=builder /app/bin/goci /usr/local/bin/goci
 
 CMD ["goci" ]

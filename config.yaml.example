@@ -1,0 +1,23 @@
+# example of service configuration file
+
+- name: "Service1"
+  pipeline:
+      jobs:
+          - name: "Job1"
+            steps:
+                - name: "Step1"
+                  cmd: "echo"
+                  args: [ "Hello, World!" ]
+                  dir: "/app"
+                  timeout: 5s
+  github:
+      path: "/webhook-path" # path specified in GitHub webhook configuration
+      method: "POST" # optional, default is POST
+      secret: "<specify service related secret here>" # if not specified, service will use global secret
+      token: "<specify service related token here>" # if not specified, service will use global token
+      branch: "main"
+      event: "workflow_job"
+      commit_status_context: "goci/pipeline" # required for workflow_job event type, context value for status updates
+      workflow:
+          action: "completed"
+          job_name: "predeploy"

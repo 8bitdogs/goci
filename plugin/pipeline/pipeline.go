@@ -1,49 +1,69 @@
 package pipeline
 
 import (
+	"bytes"
 	"context"
-	"encoding/json"
-	"errors"
-	"os"
-	"path/filepath"
+	"goci/plugin/pipeline/cmd"
+
+	"github.com/rs/zerolog/log"
 )
 
-const defaultPipelineFile = ".pipeline"
-
-var (
-	ErrPipelineFileNotFound = errors.New("pipeline file not found")
-)
-
-type Step struct {
-	Command Command `json:"command"`
+type Runner struct {
+	cfg *Config
 }
 
-type Pipeline struct {
-	projectDir string
-}
-
-func New(dir string) *Pipeline {
-	return &Pipeline{
-		projectDir: dir,
+func New(cfg *Config) *Runner {
+	return &Runner{
+		cfg: cfg,
 	}
 }
 
-func (p *Pipeline) Run(ctx context.Context) error {
-	// applying steps from .pipeline file
-	pf := filepath.Join(p.projectDir, defaultPipelineFile)
-	file, err := os.Open(pf)
-	if err != nil {
-		return err
-	}
-	steps := make([]Step, 0)
-	err = json.NewDecoder(file).Decode(&steps)
-	if err != nil {
-		return err
-	}
-	for _, step := range steps {
-		if err := step.Command.run(ctx, p.projectDir); err != nil {
-			return &Error{Err: err, Step: step}
+func (w *Runner) Run(ctx context.Context) error {
+	l := log.With().
+		Str("plugin", "pipeline").
+		Logger()
+
+	l.Info().Msg("Running pipeline plugin")
+	stdOutBuff := bytes.NewBuffer(make([]byte, 1024*1024)) // 1MB buffer for stdout
+	stdErrBuff := bytes.NewBuffer(make([]byte, 1024*1024)) // 1MB buffer for stderr
+	for _, job := range w.cfg.Jobs {
+		l.Info().Str("job", job.Name).Msg("Starting job")
+		for _, step := range job.Steps {
+			stdOutBuff.Reset()
+			stdErrBuff.Reset()
+			cmdStr := step.CmdString()
+			l.Info().
+				Str("job", job.Name).
+				Str("step", step.Name).
+				Str("cmd", cmdStr).
+				Msg("Running step")
+			c := cmd.NewCommand(step.Cmd, step.Args)
+			if step.Dir != "" {
+				c.SetDir(step.Dir)
+			}
+			c.SetStdout(stdOutBuff)
+			c.SetStderr(stdErrBuff)
+			if err := c.Run(ctx); err != nil {
+				l.Error().
+					Str("job", job.Name).
+					Str("step", step.Name).
+					Str("cmd", cmdStr).
+					Str("stdout", stdOutBuff.String()).
+					Str("stderr", stdErrBuff.String()).
+					Err(err).
+					Msg("Step failed")
+				return err
+			}
+			l.Info().
+				Str("job", job.Name).
+				Str("step", step.Name).
+				Str("cmd", cmdStr).
+				Str("stdout", stdOutBuff.String()).
+				Str("stderr", stdErrBuff.String()).
+				Msg("Step complete")
 		}
 	}
+
+	l.Info().Str("plugin", "pipeline").Msg("Pipeline plugin complete")
 	return nil
 }
