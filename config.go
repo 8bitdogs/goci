@@ -80,58 +80,60 @@ func parse() (*config, []serviceConfig, error) {
 		return nil, nil, fmt.Errorf("unsupported config file format: %s. use one of .yaml, .yml, .json", ext)
 	}
 
-	for _, s := range serviceCfg {
+	for i, s := range serviceCfg {
 		if s.Github.Webhook.Method == "" {
 			if cfg.Github.Method != "" {
-				s.Github.Webhook.Method = cfg.Github.Method
+				serviceCfg[i].Github.Webhook.Method = cfg.Github.Method
 			} else {
-				s.Github.Webhook.Method = http.MethodPost
+				serviceCfg[i].Github.Webhook.Method = http.MethodPost
 			}
 		}
 
 		if s.Github.Webhook.Secret == "" {
-			s.Github.Webhook.Secret = cfg.Github.Secret
+			serviceCfg[i].Github.Webhook.Secret = cfg.Github.Secret
 		}
 
 		if s.Github.Token == "" {
-			s.Github.Token = cfg.Github.Token
+			serviceCfg[i].Github.Token = cfg.Github.Token
 		}
 
 		if s.Github.Webhook.Branch == "" {
-			s.Github.Webhook.Branch = cfg.Github.TargetBranch
+			serviceCfg[i].Github.Webhook.Branch = cfg.Github.TargetBranch
 		}
 
 		// if s.Github.Webhook.ResponseTimeout == 0 {
 		// 	s.Github.Webhook.ResponseTimeout = cfg.Github.ResponseTimeout
 		// }
 
+		eventType := s.Github.Webhook.EventType
 		if s.Github.Webhook.EventType == "" {
 			if cfg.Github.EventType != "" {
-				s.Github.Webhook.EventType = cfg.Github.EventType
+				serviceCfg[i].Github.Webhook.EventType = cfg.Github.EventType
 			} else {
-				s.Github.Webhook.EventType = "push"
+				serviceCfg[i].Github.Webhook.EventType = "push"
 			}
+			eventType = serviceCfg[i].Github.Webhook.EventType
 		}
 
 		if s.Github.Webhook.CommitStatusContext == "" {
-			s.Github.Webhook.CommitStatusContext = cfg.Github.CommitStatusContext
+			serviceCfg[i].Github.Webhook.CommitStatusContext = cfg.Github.CommitStatusContext
 		}
 
 		if cfg.Github.WorkflowName != "" && s.Github.Webhook.Workflow.Name == "" {
-			s.Github.Webhook.Workflow.Name = cfg.Github.WorkflowName
+			serviceCfg[i].Github.Webhook.Workflow.Name = cfg.Github.WorkflowName
 		}
 
-		if s.Github.Webhook.Workflow.JobName == "" && strings.HasPrefix(s.Github.Webhook.EventType, "workflow") {
+		if s.Github.Webhook.Workflow.JobName == "" && strings.HasPrefix(eventType, "workflow") {
 			if cfg.Github.WorkflowJobName != "" {
-				s.Github.Webhook.Workflow.JobName = cfg.Github.WorkflowJobName
+				serviceCfg[i].Github.Webhook.Workflow.JobName = cfg.Github.WorkflowJobName
 			} else {
 				panic("`job_name` required for workflow events")
 			}
 		}
 
-		if s.Github.Webhook.Workflow.Action == "" && strings.HasPrefix(s.Github.Webhook.EventType, "workflow") {
+		if s.Github.Webhook.Workflow.Action == "" && strings.HasPrefix(eventType, "workflow") {
 			if cfg.Github.WorkflowAction != "" {
-				s.Github.Webhook.Workflow.Action = cfg.Github.WorkflowAction
+				serviceCfg[i].Github.Webhook.Workflow.Action = cfg.Github.WorkflowAction
 			} else {
 				panic("`action` required for workflow events")
 			}
