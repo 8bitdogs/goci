@@ -14,7 +14,6 @@ import (
 
 	"github.com/antonmashko/envconf"
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
 )
 
@@ -106,13 +105,16 @@ func parse() (*config, []serviceConfig, error) {
 		// 	s.Github.Webhook.ResponseTimeout = cfg.Github.ResponseTimeout
 		// }
 
-		log.Info().Str("service", s.Name).Str("event", s.Github.Webhook.EventType).Msg("parsing service configuration")
 		if s.Github.Webhook.EventType == "" {
 			if cfg.Github.EventType != "" {
 				s.Github.Webhook.EventType = cfg.Github.EventType
 			} else {
 				s.Github.Webhook.EventType = "push"
 			}
+		}
+
+		if s.Github.Webhook.CommitStatusContext == "" {
+			s.Github.Webhook.CommitStatusContext = cfg.Github.CommitStatusContext
 		}
 
 		if cfg.Github.WorkflowName != "" && s.Github.Webhook.Workflow.Name == "" {
@@ -132,12 +134,6 @@ func parse() (*config, []serviceConfig, error) {
 				s.Github.Webhook.Workflow.Action = cfg.Github.WorkflowAction
 			} else {
 				panic("`action` required for workflow events")
-			}
-		}
-
-		if s.Github.Webhook.CommitStatusContext == "" {
-			if cfg.Github.CommitStatusContext != "" {
-				s.Github.Webhook.CommitStatusContext = cfg.Github.CommitStatusContext
 			}
 		}
 	}

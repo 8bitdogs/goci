@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"io"
 	"os"
 	"os/exec"
 )
@@ -17,12 +18,12 @@ func NewCommand(name string, args []string) *Command {
 	return &Command{inner: cmd}
 }
 
-func (cmd *Command) SetStderr(stderr *os.File) {
-	cmd.inner.Stderr = stderr
+func (cmd *Command) SetStderr(w io.Writer) {
+	cmd.inner.Stderr = w
 }
 
-func (cmd *Command) SetStdout(stdout *os.File) {
-	cmd.inner.Stdout = stdout
+func (cmd *Command) SetStdout(w io.Writer) {
+	cmd.inner.Stdout = w
 }
 
 func (cmd *Command) SetDir(dir string) {

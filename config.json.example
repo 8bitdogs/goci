@@ -27,6 +27,7 @@
                 "secret": "<specify service related secret here>",
                 "branch": "main",
                 "event": "workflow_job",
+                "commit_status_context": "goci/pipeline",
                 "workflow": {
                     "action": "completed",
                     "job_name": "predeploy",

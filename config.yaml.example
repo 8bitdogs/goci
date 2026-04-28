@@ -17,7 +17,7 @@
       token: "<specify service related token here>" # if not specified, service will use global token
       branch: "main"
       event: "workflow_job"
+      commit_status_context: "goci/pipeline" # required for workflow_job event type, context value for status updates
       workflow:
           action: "completed"
           job_name: "predeploy"
-          status_context: "goci/deploy" # required for workflow_job event type, context value for status updates
