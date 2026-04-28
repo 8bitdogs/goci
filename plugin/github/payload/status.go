@@ -2,28 +2,14 @@ package payload
 
 // README: https://developer.github.com/v3/repos/statuses/#create-a-status
 
-type Status byte
-
-func (s Status) String() string {
-	switch s {
-	case Success:
-		return "success"
-	case Pending:
-		return "pending"
-	case Failure:
-		return "failure"
-	case Error:
-		return "error"
-	default:
-		return ""
-	}
-}
+type CommitStatusState string
 
 const (
-	Success Status = 0 + iota
-	Pending
-	Error
-	Failure
+	// GitHub commit status states
+	CommitStatusStateError   CommitStatusState = "error"
+	CommitStatusStateFailure CommitStatusState = "failure"
+	CommitStatusStatePending CommitStatusState = "pending"
+	CommitStatusStateSuccess CommitStatusState = "success"
 )
 
 type StatusCreateRequest struct {

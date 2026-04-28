@@ -9,7 +9,7 @@ type ciHostUrlOption struct {
 }
 
 func (o *ciHostUrlOption) Apply(opts *Options) {
-	opts.ciHostUrl = o.ciHostUrl
+	opts.ciHostURL = o.ciHostUrl
 }
 
 // WithCIHostUrl sets the CI host URL to which the plugin will send build status updates.

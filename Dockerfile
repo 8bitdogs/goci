@@ -14,8 +14,5 @@ RUN go build -o /app/bin/goci .
 FROM docker:29.4.1-alpine3.23
 
 COPY --from=builder /app/bin/goci /usr/local/bin/goci
-COPY docker-entrypoint.sh /usr/local/bin/ 	
-
-ENTRYPOINT [ "docker-entrypoint.sh" ]
 
 CMD ["goci" ]

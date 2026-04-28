@@ -1,6 +1,10 @@
 package option
 
-import "time"
+import (
+	"time"
+
+	"github.com/antonmashko/taskq"
+)
 
 type Option interface {
 	Apply(opts *Options)
@@ -9,17 +13,19 @@ type Option interface {
 type Options struct {
 	secret    string
 	token     string
-	ciHostUrl string
+	ciHostURL string
 
 	eventType    string
 	targetBranch string
 
-	workflowName          string
-	workflowJobName       string
-	workflowAction        string
-	workflowStatusContext string
+	commitStatusContext string
+
+	workflowName    string
+	workflowJobName string
+	workflowAction  string
 
 	timeout time.Duration
+	taskq   *taskq.TaskQ
 }
 
 func NewOptions(opts ...Option) *Options {
@@ -40,8 +46,8 @@ func (o *Options) Token() string {
 	return o.token
 }
 
-func (o *Options) CIHostUrl() string {
-	return o.ciHostUrl
+func (o *Options) CIHostURL() string {
+	return o.ciHostURL
 }
 
 func (o *Options) EventType() string {
@@ -88,6 +94,10 @@ func (o *Options) IsWorkflowAction(workflowAction string) bool {
 	return o.workflowAction == workflowAction
 }
 
-func (o *Options) WorkflowStatusContext() string {
-	return o.workflowStatusContext
+func (o *Options) CommitStatusContext() string {
+	return o.commitStatusContext
+}
+
+func (o *Options) TaskQ() *taskq.TaskQ {
+	return o.taskq
 }

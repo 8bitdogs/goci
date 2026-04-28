@@ -8,6 +8,7 @@ import (
 	"goci/plugin/pipeline"
 
 	"github.com/8bitdogs/ruffe"
+	"github.com/antonmashko/taskq"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -26,6 +27,8 @@ func main() {
 
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
+	tq := taskq.New(cfg.TaskQSize)
+	tq.Start()
 	server := core.NewServer(cfg.Server.Addr)
 
 	// adding webhook handlers
@@ -41,9 +44,11 @@ func main() {
 			// Dur("response_timeout", s.Github.Webhook.ResponseTimeout).
 			Msg("adding webhook")
 
-		gitWh := github.NewWebhook(pipeline.New(&s.Pipeline), s.Github.Options()...)
+		gitWh := github.NewWebhook(pipeline.New(&s.Pipeline), s.Github.Options(tq)...)
 		server.Handle(s.Github.Webhook.Path, s.Github.Webhook.Method, ruffe.HTTPHandlerFunc(gitWh.ServeHTTP))
 	}
+
+	// TODO: add graceful shutdown
 
 	log.Info().Str("address", cfg.Server.Addr).Msg("starting server")
 	if err = server.ListenAndServe(); err != nil {

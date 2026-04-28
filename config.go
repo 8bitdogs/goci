@@ -21,6 +21,7 @@ import (
 type config struct {
 	CIHost     string `flag:"host" env:"CI_HOST"`
 	ConfigFile string `flag:"config" default:"config.json"`
+	TaskQSize  int    `flag:"taskq-size" env:"TASKQ_SIZE" default:"100"`
 
 	Server struct {
 		Addr string `env:"SERVER_ADDR" default:":7878"`
@@ -31,16 +32,16 @@ type config struct {
 	}
 
 	Github struct {
-		Token                 string        `env:"GITHUB_TOKEN"`
-		Method                string        `env:"GITHUB_METHOD" default:"POST"`
-		ResponseTimeout       time.Duration `env:"GITHUB_RESPONSE_TIMEOUT" default:"10s"`
-		Secret                string        `env:"GITHUB_WEBHOOK_SECRET"`
-		TargetBranch          string        `env:"GITHUB_TARGET_BRANCH" default:"main"`
-		EventType             string        `env:"GITHUB_EVENT_TYPE" default:"push"`
-		WorkflowName          string        `env:"GITHUB_WORKFLOW_NAME"`
-		WorkflowJobName       string        `env:"GITHUB_WORKFLOW_JOB_NAME"`
-		WorkflowAction        string        `env:"GITHUB_WORKFLOW_ACTION" default:"completed"`
-		WorkflowStatusContext string        `env:"GITHUB_WORKFLOW_STATUS_CONTEXT" default:"deploy"`
+		Token               string        `env:"GITHUB_TOKEN"`
+		Method              string        `env:"GITHUB_METHOD" default:"POST"`
+		ResponseTimeout     time.Duration `env:"GITHUB_RESPONSE_TIMEOUT" default:"10s"`
+		Secret              string        `env:"GITHUB_WEBHOOK_SECRET"`
+		TargetBranch        string        `env:"GITHUB_TARGET_BRANCH" default:"main"`
+		EventType           string        `env:"GITHUB_EVENT_TYPE" default:"push"`
+		CommitStatusContext string        `env:"GITHUB_COMMIT_STATUS_CONTEXT" default:"goci/pipeline"`
+		WorkflowName        string        `env:"GITHUB_WORKFLOW_NAME"`
+		WorkflowJobName     string        `env:"GITHUB_WORKFLOW_JOB_NAME"`
+		WorkflowAction      string        `env:"GITHUB_WORKFLOW_ACTION" default:"completed"`
 	}
 }
 
@@ -134,11 +135,9 @@ func parse() (*config, []serviceConfig, error) {
 			}
 		}
 
-		if s.Github.Webhook.Workflow.StatusContext == "" && strings.HasPrefix(s.Github.Webhook.EventType, "workflow") {
-			if cfg.Github.WorkflowStatusContext != "" {
-				s.Github.Webhook.Workflow.StatusContext = cfg.Github.WorkflowStatusContext
-			} else {
-				panic("`status_context` required for workflow events")
+		if s.Github.Webhook.CommitStatusContext == "" {
+			if cfg.Github.CommitStatusContext != "" {
+				s.Github.Webhook.CommitStatusContext = cfg.Github.CommitStatusContext
 			}
 		}
 	}

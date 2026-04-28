@@ -1,13 +1,13 @@
 package github
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 
 	"goci/core"
 	"goci/plugin/github/option"
@@ -31,53 +31,12 @@ func NewWebhook(p core.Pipeline, opts ...option.Option) *Webhook {
 	}
 }
 
-func (wb *Webhook) createStatus(r payload.Request, result *payload.StatusCreateRequest) error {
-	const host = "https://api.github.com"
-	//POST /repos/:owner/:repo/statuses/:sha
-	b, err := json.Marshal(result)
-	if err != nil {
-		return err
-	}
-
-	url := fmt.Sprintf("%s/repos/%s/statuses/%s", host, r.FullName(), r.Sha())
-
-	l := log.With().
-		Str("url", url).
-		Str("status", result.State).
-		Str("ci_url", result.TargetURL).
-		Str("body", string(b)).
-		Logger()
-
-	l.Debug().Msg("sending status")
-
-	req, err := http.NewRequest(http.MethodPost, url, strings.NewReader(string(b)))
-	if err != nil {
-		l.Error().Err(err).Msg("failed to create request")
-		return err
-	}
-	req.Header.Add("Accept", "application/vnd.github+json")
-	req.Header.Add("Authorization", fmt.Sprint("Bearer ", wb.options.Token()))
-	rs, err := http.DefaultClient.Do(req)
-	if err != nil {
-		l.Error().Err(err).Msg("failed to send status")
-		return err
-	}
-
-	if rs.StatusCode < 200 || rs.StatusCode > 299 {
-		err := fmt.Errorf("invalid status code. url=%s status_code=%d", url, rs.StatusCode)
-		l.Error().Err(err).Msg("failed to send status")
-		return err
-	}
-
-	l.Debug().Msg("Done")
-	return nil
-}
-
 func (wb *Webhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	requestID := core.RequestID(r.Context())
 	l := log.With().
 		Uint64("request_id", requestID).
 		Logger()
+
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -187,54 +146,26 @@ func (wb *Webhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	lock := make(chan error)
-	go func(data payload.Request) {
-		l.Debug().Msg("running job...")
-		err := wb.pipeline.Run(r.Context())
+	task := newCommitStatusPipelineTask(CommitStatusAPI{
+		sha:         webhookRequest.Sha(),
+		repository:  webhookRequest.FullName(),
+		context:     wb.options.CommitStatusContext(),
+		token:       wb.options.Token(),
+		description: "goci pipeline",
+		target_url:  "",
+	}, wb.pipeline, l)
 
-		if err != nil {
-			l.Error().Err(err).Msg("run failed")
-			select {
-			case _, ok := <-lock:
-				if !ok {
-					break
-				}
-			default:
-				lock <- err
-			}
-		}
+	_, err = wb.options.TaskQ().Enqueue(context.Background(), task)
 
-		result := payload.StatusCreateRequest{
-			State:       payload.Success.String(),
-			Description: "",
-			TargetURL:   "", // wb.options.CIHostUrl() + strconv.FormatUint(requestID, 10),
-			Context:     wb.options.WorkflowStatusContext(),
-		}
-
-		if err != nil {
-			result.State = payload.Error.String()
-			result.Description = err.Error()
-		}
-
-		err = wb.createStatus(data, &result)
-		if err != nil {
-			l.Error().Err(err).Msg("failed to create github status")
-		}
-	}(webhookRequest)
-
-	select {
-	case err := <-lock:
-		if err != nil {
-			l.Error().Err(err).Msg("failed")
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		l.Debug().Msg("job finished successful")
-	case <-time.After(wb.options.Timeout()):
-		w.Header().Add("X-Request-ID", fmt.Sprint(requestID))
-		w.WriteHeader(http.StatusCreated)
-		close(lock)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+		l.Error().Err(err).Msg("failed to enqueue pipeline task")
+		return
 	}
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintln(w, "pipeline triggered")
 }
 
 func (wb *Webhook) unmarshalPayload(b []byte, contentType string, data any) error {

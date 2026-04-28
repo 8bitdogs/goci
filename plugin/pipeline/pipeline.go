@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"context"
+	"time"
 
 	"github.com/rs/zerolog/log"
 )
@@ -18,5 +19,7 @@ func New(cfg *Config) *Runner {
 
 func (w *Runner) Run(ctx context.Context) error {
 	log.Info().Str("plugin", "pipeline").Msg("Running pipeline plugin")
+	time.Sleep(30 * time.Second)
+	log.Info().Str("plugin", "pipeline").Msg("Pipeline plugin complete")
 	return nil
 }

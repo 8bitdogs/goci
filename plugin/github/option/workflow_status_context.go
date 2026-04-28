@@ -1,13 +1,15 @@
 package option
 
-type WorkflowStatusContextOption struct {
-	workflowStatusContext string
+var _ Option = (*CommitStatusContextOption)(nil)
+
+type CommitStatusContextOption struct {
+	commitStatusContext string
 }
 
-func (o *WorkflowStatusContextOption) Apply(opts *Options) {
-	opts.workflowStatusContext = o.workflowStatusContext
+func (o *CommitStatusContextOption) Apply(opts *Options) {
+	opts.commitStatusContext = o.commitStatusContext
 }
 
-func WithWorkflowStatusContext(workflowStatusContext string) Option {
-	return &WorkflowStatusContextOption{workflowStatusContext: workflowStatusContext}
+func WithCommitStatusContext(commitStatusContext string) Option {
+	return &CommitStatusContextOption{commitStatusContext: commitStatusContext}
 }
